@@ -1,0 +1,19 @@
+# Basura del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Temporales de Arduino / Compilados
+build/
+*.hex
+*.elf
+*.bin
+*.out
+*.map
+*.o
+*.a
+
+# Editor de texto / IDEs
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
