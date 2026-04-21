@@ -1,59 +1,57 @@
-# Planificación Arquitectónica: Estación Meteorológica ESP32
+# Planificación Arquitectónica: Estación Meteorológica ESP32 + Supabase + Vite
 
 ## 1. Visión General del Proyecto
-El objetivo del proyecto es construir una **Estación Meteorológica Integral** (y de monitoreo ambiental) utilizando un microcontrolador ESP32 como cerebro principal. El sistema se encarga de recolectar datos de 7 sensores distintos para medir variables climatológicas y ambientales.
+El objetivo del proyecto es construir una **Estación Meteorológica Integral IoT** utilizando un microcontrolador ESP32 como hardware central, una base de datos en la nube (Supabase) y un Dashboard web moderno (Vite + React) para visualizar los datos en tiempo real y el histórico.
 
-La arquitectura del software sigue el principio de **"Desarrollo Modular"**: primero se aíslan y validan las partes (pruebas unitarias por hardware) antes de realizar la integración total en un código maestro.
-
----
-
-## 2. Mapa de Hardware y Arquitectura de Pines
-El sistema está diseñado de forma inteligente para compartir buses de comunicación y evitar conflictos de pines, maximizando la eficiencia del ESP32.
-
-### 🔌 Bus I2C Compartido (Pines: `SDA = 21`, `SCL = 22`)
-Al ser un bus de comunicación direccional, estos tres componentes pueden compartir los mismos dos cables físicos:
-*   **BME280:** Mide temperatura ambiental, humedad y presión barométrica (y altitud aproximada).
-*   **MPU6500:** Acelerómetro y giroscopio. Útil para medir vibraciones mecánicas de la estación o la inclinación/estabilidad del mástil.
-*   **DS3231 (RTC):** Módulo de Reloj de Tiempo Real. Mantiene la fecha y hora exactas de cada medición, incluso si el ESP32 se reinicia o pierde internet.
-
-### 🎙️ Bus I2S Dedicado (Audio de Alta Velocidad)
-*   **INMP441 (Micrófono MEMS):** Pines `WS = 25`, `SCK = 26`, `SD = 33`.
-    *   *Propósito:* Mide los niveles de ruido ambiental en decibeles. Se utiliza DMA (Direct Memory Access) para no bloquear el procesador mientras escucha el entorno.
-
-### 📡 Pines Digitales y Analógicos Independientes
-*   **DS18B20 (Temperatura Precisa):** Pin `4` (Protocolo One-Wire). Ideal para medir una temperatura exterior específica o de suelo, con alta precisión y resistencia a la intemperie. Requiere resistencia Pull-Up de 4.7k.
-*   **LDR LM393 (Fotorresistencia):** Pin `34` (ADC1).
-    *   *Propósito:* Mide el porcentaje de luz solar/oscuridad. El pin 34 es clave porque pertenece al ADC1, el cual *no* se desactiva cuando el ESP32 enciende el Wi-Fi.
-*   **KY-003 (Sensor Magnético Efecto Hall):** Pin `27` (Interrupción Digital `INPUT_PULLUP`).
-    *   *Propósito:* Funciona como contador de vueltas para un **Anemómetro** (para medir la velocidad del viento). Funciona mediante interrupciones de hardware (`FALLING`) para no perder ningún pulso por más rápido que gire.
+> 🤖 **Aviso para Agentes de IA:** Este documento es la "Fuente de la Verdad" de la arquitectura. La estrategia de delegación del usuario implica que ustedes lean este plan y se ciñan estrictamente a estos lineamientos para ejecutar su fase correspondiente.
 
 ---
 
-## 3. Fases de Desarrollo
+## 2. Mapa de Hardware y Arquitectura de Pines (ESP32)
+El sistema recolecta datos de 7 sensores. Los pines fueron elegidos estratégicamente para evitar colisiones entre el Wi-Fi y el ADC, y evitar problemas en los pines de booteo (Strapping pins).
 
-### 🟢 FASE 1: Pruebas Unitarias (ESTADO ACTUAL: COMPLETADO)
-*   **Objetivo:** Desarrollar 7 códigos (`.ino`) independientes.
-*   **Verificación:** 
-    *   [x] Pines sin colisiones.
-    *   [x] Pines libres de problemas de "Strapping" durante el booteo (Corregido Pin del KY-003).
-    *   [x] Documentación clara en cada código de prueba.
-*   **Acción del Usuario:** Compilar y probar físicamente cada sensor con su respectivo código para descartar hardware defectuoso.
-
-### 🟡 FASE 2: Integración (PRÓXIMO PASO)
-*   **Objetivo:** Crear el archivo `main.ino` dentro de la carpeta `Aplicación`.
-*   **Mecánica:** Unir las lógicas de inicialización (`setup`) y lectura (`loop`) de los 7 sensores usando técnicas no bloqueantes (reemplazar los `delay()` por `millis()`).
-*   **Resultado esperado:** Un solo código que escupa por el Monitor Serie un JSON o una cadena formateada con todos los valores simultáneos (Ej: `Temp: 24°C | Hum: 50% | Luz: 80% | Viento: 15km/h | Ruido: 40dB`).
-
-### ⚪ FASE 3: Dashboard y Simulación de Datos (MODO EMERGENCIA)
-*   **Objetivo:** Desarrollar un Dashboard en la carpeta `Aplicación` para visualizar los datos.
-*   **Contingencia Actual:** Debido al tiempo límite y la falta de mediciones reales, se desarrollará un script para inyectar/manipular una base de datos con 5 días de mediciones sintéticas (falsas pero estadísticamente realistas, simulando el ciclo día/noche).
-*   **Implementación:**
-    *   Paso 1: Generar la base de datos (CSV/JSON/SQL) con datos ficticios realistas.
-    *   Paso 2: Construir el Dashboard en la carpeta `Aplicación` que lea estos datos.
+*   **Bus I2C Compartido (`SDA = 21`, `SCL = 22`):**
+    *   BME280 (Temperatura, Humedad, Presión).
+    *   MPU6500 (Acelerómetro/Giroscopio).
+    *   DS3231 (Módulo RTC para fecha/hora local).
+*   **Bus I2S Dedicado:**
+    *   INMP441 - Micrófono (`WS = 25`, `SCK = 26`, `SD = 33`).
+*   **Pines Analógicos/Digitales Independientes:**
+    *   DS18B20 (Temperatura exterior): `Pin 4` (OneWire con resistencia Pull-Up de 4.7k).
+    *   LDR LM393 (Sensor de luz): `Pin 34` (ADC1, funciona en paralelo con el Wi-Fi).
+    *   KY-003 (Anemómetro/Efecto Hall): `Pin 27` (Interrupción digital `FALLING`, `INPUT_PULLUP`).
 
 ---
 
-## 4. Notas Arquitectónicas y Observaciones a Revisar
-1.  **Doble Sensor de Temperatura:** Tenemos temperatura en el BME280 y en el DS18B20. *Pregunta para el diseño final:* ¿El BME280 irá encapsulado en una garita meteorológica midiendo humedad/presión general, mientras que el DS18B20 (que suele venir en una sonda impermeable) medirá agua/suelo o temperatura directa al sol?
-2.  **Micrófono INMP441:** Escuchar audio constantemente y convertirlo a un valor RMS o nivel de decibeles consume ciclos de procesamiento. Habrá que calibrarlo bien en la Fase 2 para que no ralentice las lecturas de los demás sensores.
-3.  **Anemómetro:** El conteo de pulsos ya funciona, pero falta la matemática final para convertir "X pulsos por segundo" a "Kilómetros por hora" según el radio de rotación físico del anemómetro impreso en 3D/comprado.
+## 3. Hoja de Ruta de Desarrollo (Por Fases y Agentes)
+
+El desarrollo se divide en 4 fases. Cada agente de IA asignado a una fase debe completar su código asumiendo el contexto de las fases previas y posteriores.
+
+### 🟡 FASE 1: Firmware del ESP32 (Integración `main.ino`)
+*   **Contexto:** Los códigos individuales de los 7 sensores ya fueron validados aisladamente en la carpeta `Codigos para conectar sensores`.
+*   **Tarea del Agente IA:** 
+    1. Unificar las lecturas de los 7 sensores en un solo código maestro.
+    2. Aplicar una arquitectura basada en `millis()` (Prohibido usar `delay()` en el loop principal) para garantizar que el micrófono y el anemómetro no pierdan lecturas.
+    3. Conectar el ESP32 a la red Wi-Fi local mediante `WiFi.h`.
+    4. Empaquetar las lecturas en un JSON y enviarlas mediante `HTTP POST` directo a la API REST de Supabase cada determinado tiempo (ej. 5 minutos).
+
+### 🔵 FASE 2: Backend y Estructura de Datos (Supabase + Script Sembrador)
+*   **Contexto:** Se usará Supabase (PostgreSQL) como Backend IoT. Por falta de tiempo de recolección física, se necesita falsear el historial inicial.
+*   **Tarea del Agente IA:**
+    1. Proveer el script SQL exacto para que el usuario cree la tabla `mediciones` en Supabase de forma manual.
+    2. Programar un "Script Sembrador" local (`seed.js` o `seed.py`). Este script debe generar e inyectar en Supabase **5 días de datos sintéticos (falsos)**, asegurándose de que las curvas matemáticas sean biológicamente y climatológicamente realistas (ej. temperatura baja en la noche, picos de luz al mediodía, variaciones de humedad).
+
+### 🔴 FASE 3: Frontend y Dashboard Visual (Vite + React)
+*   **Contexto:** Creación del panel de control web en la carpeta `Aplicación`.
+*   **Tarea del Agente IA:**
+    1. Escaffoldear un proyecto Vite con React (o Vanilla JS según indique el usuario).
+    2. Instalar y configurar el cliente oficial `@supabase/supabase-js`.
+    3. Construir una interfaz visual tipo "Dashboard" (idealmente Dark Mode) usando librerías como `Recharts` o `Chart.js`.
+    4. El Dashboard debe consultar los datos históricos inyectados en la Fase 2 y suscribirse en tiempo real a las nuevas lecturas emitidas por el ESP32 en la Fase 1.
+
+### 🟢 FASE 4: Pulido y Despliegue (Vercel)
+*   **Contexto:** Recta final para la presentación.
+*   **Tarea del Agente IA:**
+    1. Pulir errores de UI/UX en el dashboard.
+    2. Limpiar código sobrante de Arduino.
+    3. Preparar el repositorio y dar comandos/instrucciones para desplegar la carpeta `Aplicación` en **Vercel** de forma gratuita.
