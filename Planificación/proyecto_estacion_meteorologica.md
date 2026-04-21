@@ -44,11 +44,12 @@ Al ser un bus de comunicación direccional, estos tres componentes pueden compar
 *   **Mecánica:** Unir las lógicas de inicialización (`setup`) y lectura (`loop`) de los 7 sensores usando técnicas no bloqueantes (reemplazar los `delay()` por `millis()`).
 *   **Resultado esperado:** Un solo código que escupa por el Monitor Serie un JSON o una cadena formateada con todos los valores simultáneos (Ej: `Temp: 24°C | Hum: 50% | Luz: 80% | Viento: 15km/h | Ruido: 40dB`).
 
-### ⚪ FASE 3: Conectividad y Almacenamiento (FUTURO)
-*   **Objetivo:** Darle uso a los datos recolectados aprovechando el ESP32.
-*   **Posibles implementaciones:**
-    *   Conectar a Wi-Fi y enviar datos a un servidor/Dashboard (Ej. ThingsBoard, Firebase, MQTT, ThingSpeak).
-    *   Guardar un log de los datos en una tarjeta SD (opcional).
+### ⚪ FASE 3: Dashboard y Simulación de Datos (MODO EMERGENCIA)
+*   **Objetivo:** Desarrollar un Dashboard en la carpeta `Aplicación` para visualizar los datos.
+*   **Contingencia Actual:** Debido al tiempo límite y la falta de mediciones reales, se desarrollará un script para inyectar/manipular una base de datos con 5 días de mediciones sintéticas (falsas pero estadísticamente realistas, simulando el ciclo día/noche).
+*   **Implementación:**
+    *   Paso 1: Generar la base de datos (CSV/JSON/SQL) con datos ficticios realistas.
+    *   Paso 2: Construir el Dashboard en la carpeta `Aplicación` que lea estos datos.
 
 ---
 
