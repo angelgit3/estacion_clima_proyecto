@@ -55,3 +55,21 @@ El desarrollo se divide en 4 fases. Cada agente de IA asignado a una fase debe c
     1. Pulir errores de UI/UX en el dashboard.
     2. Limpiar código sobrante de Arduino.
     3. Preparar el repositorio y dar comandos/instrucciones para desplegar la carpeta `Aplicación` en **Vercel** de forma gratuita.
+
+---
+
+## 4. Justificación de Diseño de Hardware (Alimentación)
+La estación está diseñada como un **Nodo de Monitoreo Activo (Active Edge-Computing Node)** y no como una estación pasiva de bajo consumo.
+*   **Fuente de Energía:** Conexión continua a red eléctrica (Fuente 5V).
+*   **Justificación Técnica:** Los requerimientos de detección de contaminación acústica (micrófono INMP441) y ráfagas dinámicas de viento (Anemómetro por interrupciones) exigen procesamiento activo el 100% del tiempo. El uso de baterías obligaría al microcontrolador a entrar en *Deep Sleep* periódicamente, perdiendo el muestreo crítico de los picos de ruido y las ráfagas súbitas. La alimentación continua permite el uso de DMA e interrupciones en tiempo real.
+
+---
+
+## 5. Metodología de Ensamblaje y Validación Rápida
+Al trabajar junto al Agente de IA de la Fase 1, se recomienda armar el circuito de forma **incremental** para aislar errores:
+
+1.  [ ] **Bus I2C (BME280, MPU6500, DS3231):** Conectar solo estos tres a los pines `21 y 22`. Correr un I2C Scanner y confirmar que las 3 direcciones hexadecimales sean detectadas.
+2.  [ ] **Micrófono (INMP441):** Sumar pines `25, 26, 33`. Confirmar que el código maestro no se bloquee mientras escucha (el DMA debe correr en segundo plano).
+3.  [ ] **Anemómetro (KY-003):** Conectar al `27`. Girar el imán a mano y asegurar que las interrupciones se disparen sin reinicios de la placa (Watchdog timeouts).
+4.  [ ] **Sensores Simples (DS18B20 y LDR):** Conectar pines `4` (con Pull-up) y `34`.
+5.  [ ] **Test Wi-Fi Final:** Validar en el Monitor Serie que el JSON se imprime correctamente *antes* de activar la conexión a internet y el envío POST.
