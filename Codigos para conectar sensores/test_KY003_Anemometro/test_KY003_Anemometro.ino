@@ -8,7 +8,7 @@
  * -------------------------------------------------------------------------------------
  * Pin '-' o 'GND' -> GND (ESP32)
  * Pin del medio   -> 3.3V (ESP32) 
- * Pin 'S' o 'Do'  -> GPIO 15 (ESP32)
+ * Pin 'S' o 'Do'  -> GPIO 27 (ESP32)
  * 
  * EXPLICACIÓN Y LÓGICA:
  * El sensor cambiará su estado digital (de HIGH a LOW) cuando detecte un campo magnético
@@ -22,7 +22,7 @@
  * =====================================================================================
  */
 
-#define PIN_ANEMOMETRO 15
+#define PIN_ANEMOMETRO 27
 
 // Variables para contar pulsos. 'volatile' es clave cuando se usan interrupciones
 volatile unsigned long conteoPasos = 0;
