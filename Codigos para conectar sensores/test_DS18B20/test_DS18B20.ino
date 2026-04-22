@@ -25,7 +25,7 @@
 #include <DallasTemperature.h>
 
 // Definimos el pin donde está conectado el cable de datos
-#define ONE_WIRE_BUS 4
+#define ONE_WIRE_BUS 5
 
 // Configuramos la instancia Onewire para comunicarse con cualquier dispositivo OneWire
 OneWire oneWire(ONE_WIRE_BUS);

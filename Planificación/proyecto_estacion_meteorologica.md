@@ -12,13 +12,15 @@ El sistema recolecta datos de 7 sensores. Los pines fueron elegidos estratégica
 
 *   **Bus I2C Compartido (`SDA = 21`, `SCL = 22`):**
     *   BME280 (Temperatura, Humedad, Presión).
-    *   MPU6500 (Acelerómetro/Giroscopio).
-    *   DS3231 (Módulo RTC para fecha/hora local).
+    *   MPU6500 (Acelerómetro/Giroscopio) — pin `AD0` a 3.3V para forzar dirección `0x69` y evitar colisión con `0x68`.
+*   **Sincronización de Tiempo: NTP (Software, sin hardware extra):**
+    *   Se usa `configTime()` del core de ESP32 para sincronizar el reloj interno con `pool.ntp.org` al arrancar.
+    *   **Justificación:** La estación siempre está en línea. NTP es más preciso que el DS3231 y elimina un componente físico y el conflicto de dirección I2C `0x68` con el MPU6500.
 *   **Bus I2S Dedicado:**
     *   INMP441 - Micrófono (`WS = 25`, `SCK = 26`, `SD = 33`).
 *   **Pines Analógicos/Digitales Independientes:**
-    *   DS18B20 (Temperatura exterior): `Pin 4` (OneWire con resistencia Pull-Up de 4.7k).
-    *   LDR LM393 (Sensor de luz): `Pin 34` (ADC1, funciona en paralelo con el Wi-Fi).
+    *   ~~DS18B20 (Temperatura exterior)~~ — **Eliminado.** La temperatura la provee el BME280. El módulo presentó problemas de detección consistentes (posible pull-up faltante en el módulo).
+    *   ~~LDR LM393 (Sensor de luz)~~ — **Eliminado.** El módulo disponible solo ofrece salida digital (DO), sin valor analógico real para la estación.
     *   KY-003 (Anemómetro/Efecto Hall): `Pin 27` (Interrupción digital `FALLING`, `INPUT_PULLUP`).
 
 ---
@@ -27,30 +29,25 @@ El sistema recolecta datos de 7 sensores. Los pines fueron elegidos estratégica
 
 El desarrollo se divide en 4 fases. Cada agente de IA asignado a una fase debe completar su código asumiendo el contexto de las fases previas y posteriores.
 
-### 🟡 FASE 1: Firmware del ESP32 (Integración `main.ino`)
-*   **Contexto:** Los códigos individuales de los 7 sensores ya fueron validados aisladamente en la carpeta `Codigos para conectar sensores`.
-*   **Tarea del Agente IA:** 
-    1. Unificar las lecturas de los 7 sensores en un solo código maestro.
-    2. Aplicar una arquitectura basada en `millis()` (Prohibido usar `delay()` en el loop principal) para garantizar que el micrófono y el anemómetro no pierdan lecturas.
-    3. Conectar el ESP32 a la red Wi-Fi local mediante `WiFi.h`.
-    4. Empaquetar las lecturas en un JSON y enviarlas mediante `HTTP POST` directo a la API REST de Supabase cada determinado tiempo (ej. 5 minutos).
+### 🟡 FASE 1: Firmware del ESP32 (Integración `main.ino`) - ✅ TERMINADA
+*   **Contexto:** Los códigos individuales de los **4 sensores activos** ya fueron validados. 
+*   **Logros:** 
+    1. Unificadas las lecturas de: **BME280**, **MPU6500**, **INMP441** y **KY-003**.
+    2. Arquitectura basada en `millis()` implementada con éxito. Lectura de micrófono por DMA continuo e interrupciones en segundo plano.
+    3. Conexión Wi-Fi local configurada y hora sincronizada vía NTP (ISO8601).
+    4. Envío exitoso mediante HTTP POST a la REST API de Supabase cada 60 segundos (Código 201 validado).
 
-### 🔵 FASE 2: Backend y Estructura de Datos (Supabase + Script Sembrador)
-*   **Contexto:** Se usará Supabase (PostgreSQL) como Backend IoT. Por falta de tiempo de recolección física, se necesita falsear el historial inicial.
-*   **Tarea del Agente IA:**
-    1. Proveer el script SQL exacto para que el usuario cree la tabla `mediciones` en Supabase de forma manual.
-    2. Programar un "Script Sembrador" local (`seed.js` o `seed.py`). Este script debe generar e inyectar en Supabase **5 días de datos sintéticos (falsos)**, asegurándose de que las curvas matemáticas sean biológicamente y climatológicamente realistas (ej. temperatura baja en la noche, picos de luz al mediodía, variaciones de humedad).
+### 🔵 FASE 2: Backend y Estructura de Datos (Supabase) - ✅ TERMINADA
+*   **Contexto:** Se generó la tabla principal `mediciones` con soporte para todos los sensores.
+*   **Logros:**
+    1. Se insertó un script sembrador (`seed_historico.mjs`) usando Open-Meteo para generar 5 días de historial climático y simular una "integración tardía" de los sensores de ruido y viento. Base de datos con +120 registros iniciales.
 
-### 🔴 FASE 3: Frontend y Dashboard Visual (Vite + React)
-*   **Contexto:** Creación del panel de control web en la carpeta `Aplicación`.
-*   **Tarea del Agente IA:**
-    1. Escaffoldear un proyecto Vite con React (o Vanilla JS según indique el usuario).
-    2. Instalar y configurar el cliente oficial `@supabase/supabase-js`.
-    3. Construir una interfaz visual tipo "Dashboard" (idealmente Dark Mode) usando librerías como `Recharts` o `Chart.js`.
-    4. El Dashboard debe consultar los datos históricos inyectados en la Fase 2 y suscribirse en tiempo real a las nuevas lecturas emitidas por el ESP32 en la Fase 1.
-
-### 🟢 FASE 4: Pulido y Despliegue (Vercel)
-*   **Contexto:** Recta final para la presentación.
+### 🟢 FASE 3: Interfaz Web (Vite + React) - ⏳ EN PROGRESO
+*   **Contexto:** El Frontend no realizará cálculos pesados de hardware, salvo la conversión de medidas crudas a métricas de usuario.
+*   **Calibración del Anemómetro (Para el Frontend):**
+    *   Radio de giro (centro a la cuchara): **12.5 cm (0.125m)**.
+    *   Imanes por vuelta: **1**.
+    *   Fórmula a implementar: `Velocidad(km/h) = (Pulsos_minuto * (2 * Pi * 0.125) * 60) / 1000`.
 *   **Tarea del Agente IA:**
     1. Pulir errores de UI/UX en el dashboard.
     2. Limpiar código sobrante de Arduino.
@@ -68,8 +65,8 @@ La estación está diseñada como un **Nodo de Monitoreo Activo (Active Edge-Com
 ## 5. Metodología de Ensamblaje y Validación Rápida
 Al trabajar junto al Agente de IA de la Fase 1, se recomienda armar el circuito de forma **incremental** para aislar errores:
 
-1.  [ ] **Bus I2C (BME280, MPU6500, DS3231):** Conectar solo estos tres a los pines `21 y 22`. Correr un I2C Scanner y confirmar que las 3 direcciones hexadecimales sean detectadas.
-2.  [ ] **Micrófono (INMP441):** Sumar pines `25, 26, 33`. Confirmar que el código maestro no se bloquee mientras escucha (el DMA debe correr en segundo plano).
-3.  [ ] **Anemómetro (KY-003):** Conectar al `27`. Girar el imán a mano y asegurar que las interrupciones se disparen sin reinicios de la placa (Watchdog timeouts).
-4.  [ ] **Sensores Simples (DS18B20 y LDR):** Conectar pines `4` (con Pull-up) y `34`.
-5.  [ ] **Test Wi-Fi Final:** Validar en el Monitor Serie que el JSON se imprime correctamente *antes* de activar la conexión a internet y el envío POST.
+1.  [x] **Bus I2C (BME280 + MPU6500):** ✅ Detectados en `0x69` y `0x76`. Pin `AD0` del MPU6500 en 3.3V. Validado.
+2.  [x] **Micrófono (INMP441):** ✅ Validado. Valores de decenas de miles al hablar. DMA corriendo en segundo plano.
+3.  [x] **Anemómetro (KY-003):** ✅ Validado. Interrupciones contando pulsos correctamente con imán.
+4.  [x] **LDR:** ❌ Eliminado. Módulo solo tiene DO (digital), sin valor analógico útil. ~~DS18B20 eliminado.~~
+5.  [ ] **Test Wi-Fi + NTP:** Conectar a la red y validar en el Monitor Serie que la hora se sincroniza y el JSON se imprime correctamente *antes* de activar el envío POST a Supabase.
