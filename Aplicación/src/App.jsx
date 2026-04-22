@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useStationData } from './hooks/useStationData';
 import { pulsosAViento, categorizarRuido, calcularTendencia } from './lib/calculations';
 
