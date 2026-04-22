@@ -51,15 +51,19 @@ export default function App() {
       {/* Header Simplificado */}
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 border-b border-white/10 pb-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl border border-neon-cyan/30 bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-neon-cyan text-2xl">cell_tower</span>
+          <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/50 shadow-inner">
+            <span className="material-symbols-outlined text-neon-skyblue text-2xl block">
+              podcasts
+            </span>
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              AeroSense IoT
+              Estación de Meteoros
               <span className={`w-2 h-2 rounded-full ${conectado ? 'bg-neon-emerald animate-pulse' : 'bg-red-500'}`} />
             </h1>
-            <p className="text-slate-400 text-sm">Station Alpha-1 • Telemetría en vivo</p>
+            <p className="text-slate-400 text-sm font-medium">
+              Station Alpha-1 <span className="mx-1">•</span> Telemetría en vivo
+            </p>
           </div>
         </div>
         
