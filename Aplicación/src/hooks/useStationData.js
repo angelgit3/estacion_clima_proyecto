@@ -54,15 +54,43 @@ export function useStationData(rangoInicial = '24H') {
 
     const { data, error: err } = await supabase
       .from(TABLA)
-      .select('fecha_rtc, temperatura_bme, humedad, presion, nivel_ruido, viento_pulsos, rssi_wifi')
-      .gte('fecha_rtc', desde)
-      .order('fecha_rtc', { ascending: true });
+      .select('created_at, fecha_rtc, temperatura_bme, humedad, presion, nivel_ruido, viento_pulsos, rssi_wifi')
+      // Buscamos por created_at para asegurarnos de traer los datos recientes del ESP32 aunque tengan fecha vieja
+      .gte('created_at', new Date(Date.now() - 720 * 60 * 60 * 1000).toISOString()) 
+      .order('created_at', { ascending: true });
 
     if (err) {
       setError(err.message);
       return;
     }
-    setHistorial(data || []);
+
+    // 1. Normalizar fechas
+    // El ESP32 tiene un bug: lee la hora local (UTC-6) pero la envía con una 'Z' al final, 
+    // lo que hace que Supabase crea que es UTC y la retrase 6 horas.
+    // También puede fallar el NTP y mandar 1970.
+    const dataNormalizada = (data || []).map(row => {
+      let fechaCorregida = row.fecha_rtc;
+      
+      if (fechaCorregida && fechaCorregida.startsWith('1970')) {
+        fechaCorregida = row.created_at; // Falla de NTP
+      } else if (row.created_at && row.fecha_rtc) {
+        // Si la diferencia entre created_at y fecha_rtc es casi exactamente 6 horas (bug de zona horaria del ESP32)
+        const diffHoras = (new Date(row.created_at) - new Date(row.fecha_rtc)) / (1000 * 60 * 60);
+        if (diffHoras > 5.5 && diffHoras < 6.5) {
+          fechaCorregida = row.created_at; // Usamos el created_at que es perfectamente UTC
+        }
+      }
+
+      return { ...row, fecha_rtc: fechaCorregida };
+    });
+
+    // 2. Ordenar cronológicamente por la fecha que realmente se va a graficar
+    dataNormalizada.sort((a, b) => new Date(a.fecha_rtc) - new Date(b.fecha_rtc));
+
+    // 3. Filtrar estrictamente por el rango seleccionado en la UI
+    const dataFiltrada = dataNormalizada.filter(row => new Date(row.fecha_rtc) >= new Date(desde));
+
+    setHistorial(dataFiltrada);
   }, []);
 
   /** Carga inicial: última lectura + historial */
@@ -84,12 +112,30 @@ export function useStationData(rangoInicial = '24H') {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: TABLA },
         (payload) => {
-          const nuevo = payload.new;
+          let nuevo = payload.new;
+          
+          // Parche NTP y Zona Horaria para Realtime
+          let fechaCorregida = nuevo.fecha_rtc;
+          if (fechaCorregida && fechaCorregida.startsWith('1970')) {
+            fechaCorregida = nuevo.created_at;
+          } else if (nuevo.created_at && nuevo.fecha_rtc) {
+            const diffHoras = (new Date(nuevo.created_at) - new Date(nuevo.fecha_rtc)) / (1000 * 60 * 60);
+            if (diffHoras > 5.5 && diffHoras < 6.5) {
+              fechaCorregida = nuevo.created_at;
+            }
+          }
+          nuevo = { ...nuevo, fecha_rtc: fechaCorregida };
+
           setUltimaLectura((prev) => {
             setLecturaPrevia(prev);
             return nuevo;
           });
-          setHistorial((prev) => [...prev, nuevo]);
+          setHistorial((prev) => {
+            // Filtrar y ordenar para que la gráfica no se vuelva loca
+            const combinado = [...prev, nuevo];
+            combinado.sort((a, b) => new Date(a.fecha_rtc) - new Date(b.fecha_rtc));
+            return combinado;
+          });
         }
       )
       .subscribe((status) => {
