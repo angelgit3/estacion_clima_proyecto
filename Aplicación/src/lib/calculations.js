@@ -60,9 +60,9 @@ export function formatearFecha(iso, formato = 'time') {
   if (!iso) return '--:--';
   const d = new Date(iso);
   const opciones = {
-    time: { hour: '2-digit', minute: '2-digit' },
-    datetime: { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
-    date: { month: 'short', day: 'numeric' },
+    time: { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' },
+    datetime: { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' },
+    date: { month: 'short', day: 'numeric', timeZone: 'America/Mexico_City' },
   };
   return d.toLocaleString('es-MX', opciones[formato] || opciones.time);
 }
