@@ -1,11 +1,10 @@
+import { useMemo } from 'react';
 import { useStationData } from './hooks/useStationData';
 import { pulsosAViento, categorizarRuido, calcularTendencia } from './lib/calculations';
 
-import Sidebar from './components/layout/Sidebar';
-import TopBar from './components/layout/TopBar';
 import MetricCard from './components/dashboard/MetricCard';
 import StatusBadge from './components/dashboard/StatusBadge';
-import HistoricalChart from './components/dashboard/HistoricalChart';
+import SingleMetricChart from './components/dashboard/SingleMetricChart';
 import TimeRangeSelector from './components/dashboard/TimeRangeSelector';
 
 import './index.css';
@@ -36,115 +35,197 @@ export default function App() {
   const tendenciaHum = calcularTendencia(hum, lecturaPrevia?.humedad);
   const tendenciaPres = calcularTendencia(pres, lecturaPrevia?.presion);
 
-  // Estado Wi-Fi
   const wifiEstable = rssi != null && rssi > -80;
 
+  // Procesar historial para agregar viento_kmh para la gráfica
+  const historialProcesado = useMemo(() => {
+    return historial.map((d) => ({
+      ...d,
+      viento_kmh: pulsosAViento(d.viento_pulsos),
+    }));
+  }, [historial]);
+
   return (
-    <>
-      <Sidebar
-        stationName="Station Alpha-1"
-        isOnline={conectado}
-        temperature={temp}
-      />
-
-      <main className="flex-1 md:ml-64 flex flex-col min-h-screen relative overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-[#0f172a] to-[#020617]">
-        <TopBar />
-
-        <div className="p-6 md:p-8 flex-1 overflow-y-auto">
-          {/* Header del dashboard */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-            <div>
-              <h2 className="text-headline-lg text-white mb-2">Telemetría en Vivo</h2>
-              <p className="text-body-lg text-slate-400">
-                Flujo de datos en tiempo real desde Station Alpha-1.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <StatusBadge
-                label={wifiEstable ? 'Wi-Fi Estable' : 'Wi-Fi Débil'}
-                color={wifiEstable ? 'emerald' : 'orange'}
-                pulse={wifiEstable}
-              />
-              <StatusBadge
-                label="MPU6500 OK"
-                color="cyan"
-                icon="memory"
-              />
-            </div>
+    <main className="w-full min-h-screen relative overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-[#0f172a] to-[#020617] p-4 md:p-8 overflow-y-auto">
+      
+      {/* Header Simplificado */}
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 border-b border-white/10 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl border border-neon-cyan/30 bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 flex items-center justify-center">
+            <span className="material-symbols-outlined text-neon-cyan text-2xl">cell_tower</span>
           </div>
-
-          {/* Skeleton de carga */}
-          {cargando ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="glass-panel p-6 h-40 animate-pulse">
-                  <div className="h-3 bg-slate-700 rounded w-24 mb-6" />
-                  <div className="h-10 bg-slate-700 rounded w-20" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            /* Grid de métricas */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-              <MetricCard
-                title="Temperatura"
-                value={temp?.toFixed(1)}
-                unit="°C"
-                icon="thermostat"
-                accent="orange"
-                trend={tendenciaTemp}
-              />
-              <MetricCard
-                title="Humedad"
-                value={hum?.toFixed(0)}
-                unit="%"
-                icon="humidity_percentage"
-                accent="cyan"
-                trend={tendenciaHum}
-              />
-              <MetricCard
-                title="Presión"
-                value={pres?.toFixed(0)}
-                unit="hPa"
-                icon="compress"
-                accent="emerald"
-                trend={tendenciaPres}
-              />
-              <MetricCard
-                title="Ruido Ambiental"
-                value={ruido?.toFixed(0)}
-                unit="dB"
-                icon="volume_up"
-                accent="purple"
-                progress={nivelRuido}
-              />
-              <MetricCard
-                title="Vel. Viento"
-                value={vientoKmh.toFixed(1)}
-                unit="km/h"
-                icon="air"
-                accent="skyblue"
-                trend={{
-                  direction: vientoKmh > 0 ? 'up' : 'stable',
-                  delta: vientoKmh > 0 ? parseFloat(vientoKmh.toFixed(1)) : 0,
-                }}
-              />
-            </div>
-          )}
-
-          {/* Gráfica Histórica */}
-          <div className="glass-panel p-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <div>
-                <h3 className="text-headline-md text-white">Analíticas Históricas</h3>
-                <p className="text-body-sm text-slate-400">Tendencias ambientales a lo largo del tiempo.</p>
-              </div>
-              <TimeRangeSelector activo={rango} onChange={setRango} />
-            </div>
-            <HistoricalChart data={historial} rango={rango} />
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+              AeroSense IoT
+              <span className={`w-2 h-2 rounded-full ${conectado ? 'bg-neon-emerald animate-pulse' : 'bg-red-500'}`} />
+            </h1>
+            <p className="text-slate-400 text-sm">Station Alpha-1 • Telemetría en vivo</p>
           </div>
         </div>
-      </main>
-    </>
+        
+        <div className="flex flex-wrap gap-3">
+          <StatusBadge
+            label={wifiEstable ? 'Wi-Fi Estable' : 'Wi-Fi Débil'}
+            color={wifiEstable ? 'emerald' : 'orange'}
+            pulse={wifiEstable}
+          />
+          <StatusBadge
+            label="MPU6500 OK"
+            color="cyan"
+            icon="memory"
+          />
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto">
+        {/* Skeleton de carga */}
+        {cargando ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 mb-8">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="glass-panel p-6 h-40 animate-pulse">
+                <div className="h-3 bg-slate-700 rounded w-24 mb-6" />
+                <div className="h-10 bg-slate-700 rounded w-20" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Grid de Métricas en Vivo */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 mb-10">
+            <MetricCard
+              title="Temperatura"
+              value={temp?.toFixed(1)}
+              unit="°C"
+              icon="thermostat"
+              accent="orange"
+              trend={tendenciaTemp}
+            />
+            <MetricCard
+              title="Humedad"
+              value={hum?.toFixed(0)}
+              unit="%"
+              icon="humidity_percentage"
+              accent="cyan"
+              trend={tendenciaHum}
+            />
+            <MetricCard
+              title="Presión"
+              value={pres?.toFixed(0)}
+              unit="hPa"
+              icon="compress"
+              accent="emerald"
+              trend={tendenciaPres}
+            />
+            <MetricCard
+              title="Ruido Ambiental"
+              value={ruido?.toFixed(0)}
+              unit="dB"
+              icon="volume_up"
+              accent="purple"
+              progress={nivelRuido}
+            />
+            <MetricCard
+              title="Vel. Viento"
+              value={vientoKmh.toFixed(1)}
+              unit="km/h"
+              icon="air"
+              accent="skyblue"
+              trend={{
+                direction: vientoKmh > 0 ? 'up' : 'stable',
+                delta: vientoKmh > 0 ? parseFloat(vientoKmh.toFixed(1)) : 0,
+              }}
+            />
+          </div>
+        )}
+
+        {/* Sección de Gráficas Históricas */}
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-white">Analíticas por Sensor</h2>
+            <p className="text-slate-400 text-sm">Evolución detallada en el tiempo</p>
+          </div>
+          <TimeRangeSelector activo={rango} onChange={setRango} />
+        </div>
+
+        {/* Grid de Gráficas Individuales */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="glass-panel p-5">
+            <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
+              <span className="material-symbols-outlined text-neon-orange text-lg">thermostat</span>
+              Temperatura
+            </h3>
+            <SingleMetricChart
+              data={historialProcesado}
+              dataKey="temperatura_bme"
+              name="Temperatura"
+              unit="°C"
+              color="#fb923c"
+              rango={rango}
+            />
+          </div>
+
+          <div className="glass-panel p-5">
+            <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
+              <span className="material-symbols-outlined text-neon-cyan text-lg">humidity_percentage</span>
+              Humedad Relativa
+            </h3>
+            <SingleMetricChart
+              data={historialProcesado}
+              dataKey="humedad"
+              name="Humedad"
+              unit="%"
+              color="#22d3ee"
+              rango={rango}
+              domain={[0, 100]}
+            />
+          </div>
+
+          <div className="glass-panel p-5">
+            <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
+              <span className="material-symbols-outlined text-neon-emerald text-lg">compress</span>
+              Presión Atmosférica
+            </h3>
+            <SingleMetricChart
+              data={historialProcesado}
+              dataKey="presion"
+              name="Presión"
+              unit="hPa"
+              color="#34d399"
+              rango={rango}
+            />
+          </div>
+
+          <div className="glass-panel p-5">
+            <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
+              <span className="material-symbols-outlined text-neon-purple text-lg">volume_up</span>
+              Nivel de Ruido
+            </h3>
+            <SingleMetricChart
+              data={historialProcesado}
+              dataKey="nivel_ruido"
+              name="Ruido"
+              unit="dB"
+              color="#a855f7"
+              rango={rango}
+            />
+          </div>
+
+          <div className="glass-panel p-5 lg:col-span-2 xl:col-span-1">
+            <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
+              <span className="material-symbols-outlined text-neon-skyblue text-lg">air</span>
+              Velocidad del Viento
+            </h3>
+            <SingleMetricChart
+              data={historialProcesado}
+              dataKey="viento_kmh"
+              name="Viento"
+              unit="km/h"
+              color="#38bdf8"
+              rango={rango}
+              domain={[0, 'auto']}
+            />
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
