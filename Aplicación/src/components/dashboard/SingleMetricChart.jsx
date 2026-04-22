@@ -70,19 +70,23 @@ export default function SingleMetricChart({
   const horas = RANGO_A_HORAS[rango] || 24;
   const now = Date.now();
   const startTime = now - horas * 60 * 60 * 1000;
-  const endTime = now;
 
-  // Muestrear datos y agregar timestamp numérico para el eje X
+  // 1. Muestrear datos para no saturar el DOM
   const MAX_PUNTOS = 150;
   const dataMuestreada =
     data.length > MAX_PUNTOS
       ? data.filter((_, i) => i % Math.ceil(data.length / MAX_PUNTOS) === 0)
       : data;
       
+  // 2. Extraer los timestamps de la data para el eje X numérico
   const dataConTimestamp = dataMuestreada.map(d => ({
     ...d,
     timestamp: new Date(d.fecha_rtc).getTime()
   }));
+
+  // 3. Asegurar que el extremo derecho sea al menos 'now', pero si hay un dato más en el futuro (desfase NTP), que lo abarque.
+  const ultimoTimestamp = dataConTimestamp.length > 0 ? Math.max(...dataConTimestamp.map(d => d.timestamp)) : now;
+  const endTime = Math.max(now, ultimoTimestamp);
 
   // ID único para el gradiente basado en el dataKey
   const gradId = `grad_${dataKey}`;
