@@ -13,19 +13,19 @@ El proyecto consta de tres capas principales que operan de manera asíncrona per
 
 ```mermaid
 graph TD;
-    subgraph Capa Hardware (IoT)
+    subgraph Hardware ["Capa Hardware (IoT)"]
     ESP32[ESP32 Microcontroller]
     BME280[BME280: Temp, Hum, Pres] --> ESP32
     KY003[KY-003: Anemómetro] --> ESP32
     INMP441[INMP441: Micrófono I2S] --> ESP32
     end
 
-    subgraph Capa Servidor (Backend)
+    subgraph Backend ["Capa Servidor (Backend)"]
     Supabase[(Supabase PostgreSQL)]
     ESP32 -- "HTTP POST (JSON) via Wi-Fi" --> Supabase
     end
 
-    subgraph Capa Cliente (Frontend)
+    subgraph Frontend ["Capa Cliente (Frontend)"]
     React[React / Vite Dashboard]
     Supabase -- "Suscripción Realtime (WebSockets)" --> React
     Supabase -- "REST API (Histórico)" --> React
