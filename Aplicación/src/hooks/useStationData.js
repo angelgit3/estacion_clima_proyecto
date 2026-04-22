@@ -55,20 +55,25 @@ export function useStationData(rangoInicial = '24H') {
     const { data, error: err } = await supabase
       .from(TABLA)
       .select('created_at, fecha_rtc, temperatura_bme, humedad, presion, nivel_ruido, viento_pulsos, rssi_wifi')
-      // Buscamos por created_at para asegurarnos de traer los datos recientes del ESP32 aunque tengan fecha vieja
       .gte('created_at', new Date(Date.now() - 720 * 60 * 60 * 1000).toISOString()) 
-      .order('created_at', { ascending: true });
+      // CLAVE: Ordenamos DESCENDENTE para que Supabase nos traiga SIEMPRE los datos más nuevos primero, 
+      // evitando que el límite de 1000 filas nos entierre la data viva debajo de los datos semilla.
+      .order('created_at', { ascending: false })
+      .limit(2000);
 
     if (err) {
       setError(err.message);
       return;
     }
 
+    // Como pedimos descendente para no perder los nuevos, acá lo volvemos a invertir
+    const dataInvertida = (data || []).reverse();
+
     // 1. Normalizar fechas
     // El ESP32 tiene un bug: lee la hora local (UTC-6) pero la envía con una 'Z' al final, 
     // lo que hace que Supabase crea que es UTC y la retrase 6 horas.
     // También puede fallar el NTP y mandar 1970.
-    const dataNormalizada = (data || []).map(row => {
+    const dataNormalizada = dataInvertida.map(row => {
       let fechaCorregida = row.fecha_rtc;
       
       if (fechaCorregida && fechaCorregida.startsWith('1970')) {
