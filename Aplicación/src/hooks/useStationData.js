@@ -34,7 +34,7 @@ export function useStationData(rangoInicial = '24H') {
     const { data, error: err } = await supabase
       .from(TABLA)
       .select('*')
-      .order('fecha_rtc', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(2);
 
     if (err) {
