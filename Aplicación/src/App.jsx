@@ -9,7 +9,16 @@ import TimeRangeSelector from './components/dashboard/TimeRangeSelector';
 
 import './index.css';
 
+const SENSORS = [
+  { id: 'temperatura_bme', label: 'Temperatura', icon: 'thermostat', unit: '°C', color: '#fb923c', domain: ['auto', 'auto'] },
+  { id: 'humedad', label: 'Humedad', icon: 'humidity_percentage', unit: '%', color: '#22d3ee', domain: [0, 100] },
+  { id: 'presion', label: 'Presión', icon: 'compress', unit: 'hPa', color: '#34d399', domain: ['auto', 'auto'] },
+  { id: 'nivel_ruido', label: 'Ruido', icon: 'volume_up', unit: 'dB', color: '#a855f7', domain: ['auto', 'auto'] },
+  { id: 'viento_kmh', label: 'Viento', icon: 'air', unit: 'km/h', color: '#38bdf8', domain: [0, 'auto'] },
+];
+
 export default function App() {
+  const [sensorActivo, setSensorActivo] = useState(SENSORS[0]);
   const {
     ultimaLectura,
     lecturaPrevia,
@@ -150,83 +159,51 @@ export default function App() {
           <TimeRangeSelector activo={rango} onChange={setRango} />
         </div>
 
-        {/* Grid de Gráficas Individuales */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="glass-panel p-5">
-            <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-neon-orange text-lg">thermostat</span>
-              Temperatura
-            </h3>
-            <SingleMetricChart
-              data={historialProcesado}
-              dataKey="temperatura_bme"
-              name="Temperatura"
-              unit="°C"
-              color="#fb923c"
-              rango={rango}
-            />
+        {/* Tabs de Sensores y Gráfica Activa */}
+        <div className="glass-panel p-5">
+          <div className="flex flex-wrap gap-2 mb-6">
+            {[
+              { id: 'temperatura_bme', label: 'Temperatura', icon: 'thermostat', unit: '°C', color: '#fb923c', domain: ['auto', 'auto'] },
+              { id: 'humedad', label: 'Humedad', icon: 'humidity_percentage', unit: '%', color: '#22d3ee', domain: [0, 100] },
+              { id: 'presion', label: 'Presión', icon: 'compress', unit: 'hPa', color: '#34d399', domain: ['auto', 'auto'] },
+              { id: 'nivel_ruido', label: 'Ruido', icon: 'volume_up', unit: 'dB', color: '#a855f7', domain: ['auto', 'auto'] },
+              { id: 'viento_kmh', label: 'Viento', icon: 'air', unit: 'km/h', color: '#38bdf8', domain: [0, 'auto'] },
+            ].map(sensor => (
+              <button
+                key={sensor.id}
+                onClick={() => setSensorActivo(sensor)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300
+                  ${sensorActivo.id === sensor.id 
+                    ? 'bg-slate-700/80 text-white shadow-lg border border-slate-600' 
+                    : 'bg-slate-800/40 text-slate-400 hover:bg-slate-700/50 hover:text-slate-300 border border-transparent'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[18px]" style={{ color: sensorActivo.id === sensor.id ? sensor.color : '' }}>
+                  {sensor.icon}
+                </span>
+                {sensor.label}
+              </button>
+            ))}
           </div>
 
-          <div className="glass-panel p-5">
+          <div className="mt-2">
             <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-neon-cyan text-lg">humidity_percentage</span>
-              Humedad Relativa
+              <span className="material-symbols-outlined text-lg" style={{ color: sensorActivo.color }}>
+                {sensorActivo.icon}
+              </span>
+              Evolución de {sensorActivo.label}
             </h3>
-            <SingleMetricChart
-              data={historialProcesado}
-              dataKey="humedad"
-              name="Humedad"
-              unit="%"
-              color="#22d3ee"
-              rango={rango}
-              domain={[0, 100]}
-            />
-          </div>
-
-          <div className="glass-panel p-5">
-            <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-neon-emerald text-lg">compress</span>
-              Presión Atmosférica
-            </h3>
-            <SingleMetricChart
-              data={historialProcesado}
-              dataKey="presion"
-              name="Presión"
-              unit="hPa"
-              color="#34d399"
-              rango={rango}
-            />
-          </div>
-
-          <div className="glass-panel p-5">
-            <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-neon-purple text-lg">volume_up</span>
-              Nivel de Ruido
-            </h3>
-            <SingleMetricChart
-              data={historialProcesado}
-              dataKey="nivel_ruido"
-              name="Ruido"
-              unit="dB"
-              color="#a855f7"
-              rango={rango}
-            />
-          </div>
-
-          <div className="glass-panel p-5 lg:col-span-2 xl:col-span-1">
-            <h3 className="text-slate-300 font-semibold mb-4 text-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-neon-skyblue text-lg">air</span>
-              Velocidad del Viento
-            </h3>
-            <SingleMetricChart
-              data={historialProcesado}
-              dataKey="viento_kmh"
-              name="Viento"
-              unit="km/h"
-              color="#38bdf8"
-              rango={rango}
-              domain={[0, 'auto']}
-            />
+            <div className="h-72">
+              <SingleMetricChart
+                data={historialProcesado}
+                dataKey={sensorActivo.id}
+                name={sensorActivo.label}
+                unit={sensorActivo.unit}
+                color={sensorActivo.color}
+                rango={rango}
+                domain={sensorActivo.domain}
+              />
+            </div>
           </div>
         </div>
       </div>

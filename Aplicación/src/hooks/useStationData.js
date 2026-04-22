@@ -59,7 +59,7 @@ export function useStationData(rangoInicial = '24H') {
       // CLAVE: Ordenamos DESCENDENTE para que Supabase nos traiga SIEMPRE los datos más nuevos primero, 
       // evitando que el límite de 1000 filas nos entierre la data viva debajo de los datos semilla.
       .order('created_at', { ascending: false })
-      .limit(2000);
+      .limit(10000);
 
     if (err) {
       setError(err.message);
