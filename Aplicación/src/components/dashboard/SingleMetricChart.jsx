@@ -60,12 +60,29 @@ export default function SingleMetricChart({
   // Determinar formato del eje X
   const formatoX = rango === '7D' || rango === '30D' ? 'date' : 'time';
 
-  // Muestrear datos para no saturar el DOM
+  // Calcular el dominio de tiempo exacto para que la gráfica no se estire
+  const RANGO_A_HORAS = {
+    '1H': 1,
+    '24H': 24,
+    '7D': 24 * 7,
+    '30D': 24 * 30,
+  };
+  const horas = RANGO_A_HORAS[rango] || 24;
+  const now = Date.now();
+  const startTime = now - horas * 60 * 60 * 1000;
+  const endTime = now;
+
+  // Muestrear datos y agregar timestamp numérico para el eje X
   const MAX_PUNTOS = 150;
   const dataMuestreada =
     data.length > MAX_PUNTOS
       ? data.filter((_, i) => i % Math.ceil(data.length / MAX_PUNTOS) === 0)
       : data;
+      
+  const dataConTimestamp = dataMuestreada.map(d => ({
+    ...d,
+    timestamp: new Date(d.fecha_rtc).getTime()
+  }));
 
   // ID único para el gradiente basado en el dataKey
   const gradId = `grad_${dataKey}`;
@@ -73,7 +90,7 @@ export default function SingleMetricChart({
   return (
     <div className="w-full h-56">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={dataMuestreada} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <AreaChart data={dataConTimestamp} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={color} stopOpacity={0.3} />
@@ -84,13 +101,18 @@ export default function SingleMetricChart({
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
 
           <XAxis
-            dataKey="fecha_rtc"
+            dataKey="timestamp"
+            type="number"
+            scale="time"
+            domain={[startTime, endTime]}
             tickFormatter={(v) => formatearFecha(v, formatoX)}
             stroke="#475569"
             tick={{ fill: '#64748b', fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             dy={10}
+            // Agregamos un tick count dinámico para que no se amontonen las horas
+            tickCount={6}
           />
 
           <YAxis
