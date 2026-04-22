@@ -35,48 +35,65 @@ async function seedData() {
     const limiteAyer = new Date();
     limiteAyer.setHours(limiteAyer.getHours() - 24);
 
-    for (let i = 0; i < times.length; i++) {
-      // Ignorar datos futuros
-      const fechaMedicion = new Date(times[i]);
-      if (fechaMedicion > new Date()) continue;
+    // Iteramos hasta el penúltimo para poder interpolar con la siguiente hora
+    for (let i = 0; i < times.length - 1; i++) {
+      const fechaBase = new Date(times[i]);
+      if (fechaBase > new Date()) continue; // Ignorar futuros
 
-      // Lógica de la excusa: 
-      // Antes de ayer -> Solo BME280.
-      // Desde ayer -> BME280 + Ruido + Viento.
-      let ruido = 0;
-      let viento = 0;
-      
-      if (fechaMedicion >= limiteAyer) {
-        // Datos falsos aleatorios para simular que "ayer" conectaron el resto
-        ruido = Math.floor(Math.random() * (80 - 40 + 1)) + 40; // Ruido entre 40 y 80
-        viento = Math.floor(Math.random() * 50); // Pulsos de viento aleatorios
+      // Generar 60 datos por cada hora (uno por minuto)
+      for (let min = 0; min < 60; min++) {
+        const fechaMedicion = new Date(fechaBase.getTime() + min * 60000);
+        if (fechaMedicion > new Date()) break;
+
+        // Interpolar (Temp, Hum, Presion)
+        const ratio = min / 60.0;
+        let tempInt = temps[i] + (temps[i+1] - temps[i]) * ratio;
+        let humInt = hums[i] + (hums[i+1] - hums[i]) * ratio;
+        let presInt = pressures[i] + (pressures[i+1] - pressures[i]) * ratio;
+
+        // Añadir micro-variaciones (ruido realista) para que no sea una línea recta perfecta
+        tempInt += (Math.random() * 0.2) - 0.1; // +/- 0.1°C
+        humInt += (Math.random() * 1.0) - 0.5;   // +/- 0.5%
+        presInt += (Math.random() * 0.4) - 0.2;  // +/- 0.2hPa
+
+        let ruido = 0;
+        let viento = 0;
+        
+        if (fechaMedicion >= limiteAyer) {
+          ruido = Math.floor(Math.random() * (75 - 45 + 1)) + 45; // Ruido
+          // Viento: rachas aleatorias. A veces 0, a veces sube.
+          viento = Math.random() > 0.6 ? Math.floor(Math.random() * 40) : 0; 
+        }
+
+        rowsToInsert.push({
+          fecha_rtc: fechaMedicion.toISOString(),
+          temperatura_bme: parseFloat(tempInt.toFixed(2)),
+          humedad: parseFloat(humInt.toFixed(2)),
+          presion: parseFloat(presInt.toFixed(2)),
+          nivel_ruido: ruido,
+          viento_pulsos: viento,
+          rssi_wifi: -Math.floor(Math.random() * (65 - 50 + 1) + 50),
+          accel_x: 0, accel_y: 0, accel_z: 1,
+          gyro_x: 0, gyro_y: 0, gyro_z: 0
+        });
       }
-
-      rowsToInsert.push({
-        fecha_rtc: fechaMedicion.toISOString(),
-        temperatura_bme: temps[i],
-        humedad: hums[i],
-        presion: pressures[i],
-        nivel_ruido: ruido,
-        viento_pulsos: viento,
-        rssi_wifi: -Math.floor(Math.random() * (70 - 40 + 1) + 40), // -40 a -70 dBm
-        accel_x: 0, accel_y: 0, accel_z: 1, // MPU estático
-        gyro_x: 0, gyro_y: 0, gyro_z: 0
-      });
     }
 
-    console.log(`Preparando ${rowsToInsert.length} filas para insertar en Supabase...`);
+    console.log(`Preparando ${rowsToInsert.length} filas para insertar en Supabase (Bloques de 1000)...`);
 
-    // Supabase permite insertar en bloques (batches)
-    const { data, error } = await supabase
-      .from('mediciones')
-      .insert(rowsToInsert);
-
-    if (error) {
-      console.error('Error inyectando a Supabase:', error);
-    } else {
-      console.log('¡ÉXITO! Base de datos rellenada. El historial está listo.');
+    // Supabase permite insertar máximo ~1000 a la vez por tamaño de payload, partimos el arreglo
+    const chunkSize = 1000;
+    for (let i = 0; i < rowsToInsert.length; i += chunkSize) {
+      const chunk = rowsToInsert.slice(i, i + chunkSize);
+      const { error } = await supabase.from('mediciones').insert(chunk);
+      if (error) {
+        console.error('Error inyectando a Supabase:', error);
+      } else {
+        console.log(`Insertadas ${i + chunk.length} de ${rowsToInsert.length}...`);
+      }
     }
+
+    console.log('¡ÉXITO! Base de datos rellenada con historial masivo.');
 
   } catch (err) {
     console.error('Error fatal:', err);
