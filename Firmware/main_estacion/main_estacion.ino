@@ -63,9 +63,10 @@ void setup() {
   }
   Serial.println("\nConectado a la red Wi-Fi!");
 
-  // 2. Sincronizar NTP
-  configTime(-6 * 3600, 0, "pool.ntp.org"); // UTC-6 (Ajusta si estás en otro huso horario)
-  Serial.println("Sincronizando reloj con NTP...");
+  // 2. Sincronizar NTP (UTC 0) para base de datos
+  // Usamos offset 0 porque Supabase espera ISO8601 en formato UTC ('Z')
+  configTime(0, 0, "pool.ntp.org"); 
+  Serial.println("Sincronizando reloj con NTP (UTC)...");
 
   // 3. Iniciar I2C
   Wire.begin(SDA_PIN, SCL_PIN);
