@@ -52,22 +52,32 @@ export function useStationData(rangoInicial = '24H') {
     const horas = RANGO_A_HORAS[rangoActual] || 24;
     const desde = new Date(Date.now() - horas * 60 * 60 * 1000).toISOString();
 
-    const { data, error: err } = await supabase
-      .from(TABLA)
-      .select('created_at, fecha_rtc, temperatura_bme, humedad, presion, nivel_ruido, viento_pulsos, rssi_wifi')
-      .gte('created_at', new Date(Date.now() - 720 * 60 * 60 * 1000).toISOString()) 
-      // CLAVE: Ordenamos DESCENDENTE para que Supabase nos traiga SIEMPRE los datos más nuevos primero, 
-      // evitando que el límite de 1000 filas nos entierre la data viva debajo de los datos semilla.
-      .order('created_at', { ascending: false })
-      .limit(10000);
+    // Supabase tiene un límite por defecto de 1000 filas por consulta (API Max Rows).
+    // Para traernos los 5 días (7000+ filas), hacemos paginación automática.
+    let allData = [];
+    let from = 0;
+    const step = 1000;
 
-    if (err) {
-      setError(err.message);
-      return;
+    while (true) {
+      const { data, error: err } = await supabase
+        .from(TABLA)
+        .select('created_at, fecha_rtc, temperatura_bme, humedad, presion, nivel_ruido, viento_pulsos, rssi_wifi')
+        .gte('created_at', new Date(Date.now() - 720 * 60 * 60 * 1000).toISOString()) 
+        .order('created_at', { ascending: false })
+        .range(from, from + step - 1);
+
+      if (err) {
+        setError(err.message);
+        return;
+      }
+
+      allData = allData.concat(data || []);
+      if (!data || data.length < step) break; // Si trae menos de 1000, ya terminamos
+      from += step;
     }
 
     // Como pedimos descendente para no perder los nuevos, acá lo volvemos a invertir
-    const dataInvertida = (data || []).reverse();
+    const dataInvertida = allData.reverse();
 
     // 1. Normalizar fechas
     // El ESP32 tiene un bug: lee la hora local (UTC-6) pero la envía con una 'Z' al final, 

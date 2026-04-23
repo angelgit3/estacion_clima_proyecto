@@ -1,0 +1,26 @@
+\chapter{Marco Teórico}
+
+\section{Internet de las Cosas (IoT)}
+El Internet de las Cosas se refiere a la interconexión digital de objetos cotidianos con internet. En este proyecto, la estación meteorológica actúa como un dispositivo "edge" que procesa y transmite datos hacia una arquitectura centralizada en la nube.
+
+\section{Hardware y Sensores}
+
+\subsection{ESP32}
+El ESP32 es un microcontrolador de bajo costo y bajo consumo de energía con Wi-Fi y Bluetooth de modo dual integrado. Es el corazón del proyecto debido a su potencia de procesamiento y soporte nativo para protocolos de red.
+
+\subsection{BME280: Sensor Ambiental}
+El sensor BME280 de Bosch es un sensor digital integrado que mide presión, humedad y temperatura. Utiliza el protocolo I2C para la comunicación con el microcontrolador.
+
+\subsection{MPU6500: Acelerómetro y Giroscopio}
+Este sensor permite detectar la orientación y vibraciones de la estación, lo cual es útil para verificar la estabilidad física de la estructura ante ráfagas de viento.
+
+\subsection{INMP441: Micrófono Digital I2S}
+A diferencia de los micrófonos analógicos, el INMP441 utiliza el protocolo I2S (Inter-IC Sound), lo que permite una captura de audio digital de alta fidelidad directamente en el microcontrolador sin necesidad de conversores ADC externos.
+
+\section{Infraestructura de Datos}
+
+\subsection{Supabase y PostgreSQL}
+Supabase es una alternativa de código abierto a Firebase que utiliza PostgreSQL como base de datos central. Permite capacidades de "Realtime" que son cruciales para actualizar el dashboard en el instante en que el sensor realiza una lectura.
+
+\subsection{WebSockets}
+Los WebSockets permiten una comunicación bidireccional permanente entre el cliente (Dashboard) y el servidor, eliminando la necesidad de realizar "polling" constante y reduciendo la latencia de la aplicación.

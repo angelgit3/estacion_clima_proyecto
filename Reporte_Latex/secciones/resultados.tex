@@ -1,0 +1,29 @@
+\chapter{Resultados y Análisis}
+
+\section{Funcionamiento del Dashboard}
+Las pruebas realizadas demuestran una latencia de transmisión de datos inferior a 2 segundos desde el sensor hasta la interfaz del usuario. El dashboard presenta métricas claras de temperatura, humedad, presión, ruido ambiental y velocidad del viento.
+
+\begin{figure}[H]
+    \centering
+    %\includegraphics[width=0.8\textwidth]{img/dashboard_screenshot.png}
+    \caption{Interfaz del Dashboard AeroSense IoT con visualización de métricas en tiempo real.}
+    \label{fig:dashboard}
+\end{figure}
+
+\section{Análisis de Telemetría}
+La integración con el anemómetro permite observar la correlación entre las ráfagas de viento y los cambios en la presión atmosférica reportados por el BME280. Asimismo, la integración con el NI myDAQ ha permitido validar los niveles de ruido capturados por el micrófono INMP441 mediante una referencia de laboratorio.
+
+\section{Estabilidad de Red}
+Se monitoreó el RSSI (Received Signal Strength Indicator) durante 24 horas, observando una conexión estable incluso con variaciones menores en la señal Wi-Fi, gracias a la lógica de reconexión implementada en el firmware.
+
+\chapter{Conclusiones}
+
+El proyecto AeroSense IoT cumple con los objetivos planteados, entregando una solución integral de monitoreo ambiental. Se ha demostrado que la combinación de microcontroladores potentes como el ESP32 y arquitecturas modernas de backend como Supabase permite crear sistemas de grado profesional a una fracción del costo de las soluciones comerciales.
+
+\section{Trabajos Futuros}
+Para futuras versiones, se propone:
+\begin{itemize}
+    \item Implementar el modo de bajo consumo (Deep Sleep) en el ESP32 junto con un sistema de alimentación por panel solar.
+    \item Agregar sensores de calidad de aire (PM2.5 / PM10).
+    \item Desarrollar una aplicación móvil nativa para alertas críticas mediante notificaciones push.
+\end{itemize}

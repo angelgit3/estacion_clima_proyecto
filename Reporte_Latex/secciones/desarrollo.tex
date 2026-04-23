@@ -1,0 +1,28 @@
+\chapter{Desarrollo y Metodología}
+
+\section{Arquitectura del Sistema}
+El sistema se basa en una arquitectura de tres capas:
+\begin{enumerate}
+    \item \textbf{Capa de Hardware (Percepción)}: Sensores BME280, MPU6500, INMP441 y Anemómetro conectados al ESP32.
+    \item \textbf{Capa de Transporte (Conectividad)}: Protocolo HTTP POST para el envío de JSON cifrado vía Wi-Fi.
+    \item \textbf{Capa de Presentación (Dashboard)}: Aplicación React que consume la API de Supabase y recibe actualizaciones por WebSockets.
+\end{enumerate}
+
+\section{Implementación del Firmware}
+El código del firmware se desarrolló en C++ utilizando el framework de Arduino. Las tareas principales incluyen:
+\begin{itemize}
+    \item \textbf{Sincronización NTP}: El ESP32 se sincroniza con servidores de tiempo para etiquetar cada lectura con una estampa de tiempo (timestamp) en formato ISO 8601 UTC.
+    \item \textbf{Manejo de Interrupciones}: El anemómetro utiliza una interrupción de hardware con lógica de "debounce" para contar los pulsos de viento sin bloquear el flujo principal del programa.
+    \item \textbf{Procesamiento I2S}: El audio se captura mediante DMA (Direct Memory Access) para calcular el nivel de ruido cuadrático medio (RMS) sin sobrecargar la CPU.
+\end{itemize}
+
+\section{Desarrollo del Frontend}
+El Dashboard fue construido con React y Vite, enfocándose en la experiencia de usuario (UX) mediante:
+\begin{itemize}
+    \item \textbf{Glassmorphism}: Una estética visual basada en transparencias y desenfoque (blur) utilizando Tailwind CSS.
+    \item \textbf{Recharts}: Biblioteca utilizada para el renderizado de gráficas temporales con soporte para downsampling dinámico, permitiendo visualizar meses de datos sin degradar el rendimiento del navegador.
+    \item \textbf{Custom Hooks}: Se implementó un hook \texttt{useStationData} para centralizar la lógica de suscripción a canales en tiempo real y recuperación de históricos.
+\end{itemize}
+
+\section{Configuración de la Base de Datos}
+Se diseñó un esquema en PostgreSQL para optimizar las consultas de series de tiempo. La tabla \texttt{mediciones} almacena las variables climáticas, niveles de ruido y metadatos de red (RSSI).

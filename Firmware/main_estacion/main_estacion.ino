@@ -40,8 +40,16 @@ long muestrasRuido = 0;
 // KY-003 (Anemómetro)
 #define PIN_ANEMOMETRO 27
 volatile unsigned long conteoViento = 0;
+volatile unsigned long ultimoTiempoPulso = 0; // Para el Debounce
+
 void IRAM_ATTR contarPulsoViento() {
-  conteoViento++;
+  unsigned long tiempoActual = millis();
+  // Ignorar pulsos que ocurran con menos de 5ms de diferencia (max 200Hz)
+  // Esto elimina el ruido electromagnético y los rebotes falsos
+  if (tiempoActual - ultimoTiempoPulso > 5) {
+    conteoViento++;
+    ultimoTiempoPulso = tiempoActual;
+  }
 }
 
 // Temporizadores (millis)

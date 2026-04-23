@@ -141,6 +141,7 @@ export default function SingleMetricChart({
             dot={false}
             activeDot={{ r: 4, strokeWidth: 2, stroke: color, fill: '#0f172a' }}
             animationDuration={500}
+            connectNulls={true}
           />
         </AreaChart>
       </ResponsiveContainer>

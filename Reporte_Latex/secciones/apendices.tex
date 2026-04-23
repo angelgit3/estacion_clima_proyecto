@@ -1,0 +1,89 @@
+\chapter{Apéndices}
+
+\section{Código Fuente del Firmware (ESP32)}
+Este código gestiona la lectura de todos los sensores (BME280, MPU6500, INMP441, Anemómetro) y envía los datos a Supabase mediante HTTPS.
+
+\begin{lstlisting}[language=C++]
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <Adafruit_MPU6050.h>
+#include <driver/i2s.h>
+#include <time.h>
+#include <ArduinoJson.h>
+
+const char* ssid = "TU_SSID";
+const char* password = "TU_PASSWORD";
+const String supabase_url = "TU_URL";
+const String supabase_anon_key = "TU_KEY";
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  configTime(0, 0, "pool.ntp.org"); 
+  Wire.begin(21, 22);
+  bme.begin(0x76, &Wire);
+  mpu.begin(0x69, &Wire);
+  // ... (ver codigo completo en repositorio)
+}
+
+void loop() {
+  // Lectura de microfono I2S y envio temporizado
+  // ...
+}
+\end{lstlisting}
+
+\section{Código Fuente del Frontend: Hook \texttt{useStationData}}
+Este Hook de React centraliza la lógica de obtención de datos, manejo de históricos con paginación y suscripción en tiempo real.
+
+\begin{lstlisting}[language=JavaScript]
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '../lib/supabase';
+
+export function useStationData(rangoInicial = '24H') {
+  const [ultimaLectura, setUltimaLectura] = useState(null);
+  const [historial, setHistorial] = useState([]);
+  
+  const fetchHistorial = useCallback(async (rangoActual) => {
+    // Implementacion de paginacion para saltar limites de API
+    let allData = [];
+    let from = 0;
+    const step = 1000;
+    // ... logic loop
+  }, []);
+
+  useEffect(() => {
+    const canal = supabase
+      .channel('mediciones-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mediciones' }, 
+      (payload) => {
+        // Actualizacion reactiva del estado
+      })
+      .subscribe();
+    return () => supabase.removeChannel(canal);
+  }, []);
+
+  return { ultimaLectura, historial, setRango };
+}
+\end{lstlisting}
+
+\section{Esquema de Base de Datos (SQL)}
+Definición de la tabla \texttt{mediciones} en PostgreSQL (Supabase).
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE mediciones (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at timestamptz DEFAULT now(),
+  fecha_rtc timestamptz,
+  temperatura_bme float4,
+  humedad float4,
+  presion float4,
+  viento_pulsos int4,
+  nivel_ruido float4,
+  rssi_wifi int4,
+  accel_x float4, accel_y float4, accel_z float4,
+  gyro_x float4, gyro_y float4, gyro_z float4
+);
+\end{lstlisting}

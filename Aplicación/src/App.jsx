@@ -14,6 +14,7 @@ const SENSORS = [
   { id: 'humedad', label: 'Humedad', icon: 'humidity_percentage', unit: '%', color: '#22d3ee', domain: [0, 100] },
   { id: 'presion', label: 'Presión', icon: 'compress', unit: 'hPa', color: '#34d399', domain: ['auto', 'auto'] },
   { id: 'nivel_ruido', label: 'Ruido', icon: 'volume_up', unit: 'dB', color: '#a855f7', domain: ['auto', 'auto'] },
+  { id: 'ruido_mydaq', label: 'Ruido (myDAQ)', icon: 'mic_external_on', unit: 'dB', color: '#f43f5e', domain: ['auto', 'auto'] },
   { id: 'viento_kmh', label: 'Viento', icon: 'air', unit: 'km/h', color: '#38bdf8', domain: [0, 'auto'] },
 ];
 
@@ -162,13 +163,7 @@ export default function App() {
         {/* Tabs de Sensores y Gráfica Activa */}
         <div className="glass-panel p-5">
           <div className="flex flex-wrap gap-2 mb-6">
-            {[
-              { id: 'temperatura_bme', label: 'Temperatura', icon: 'thermostat', unit: '°C', color: '#fb923c', domain: ['auto', 'auto'] },
-              { id: 'humedad', label: 'Humedad', icon: 'humidity_percentage', unit: '%', color: '#22d3ee', domain: [0, 100] },
-              { id: 'presion', label: 'Presión', icon: 'compress', unit: 'hPa', color: '#34d399', domain: ['auto', 'auto'] },
-              { id: 'nivel_ruido', label: 'Ruido', icon: 'volume_up', unit: 'dB', color: '#a855f7', domain: ['auto', 'auto'] },
-              { id: 'viento_kmh', label: 'Viento', icon: 'air', unit: 'km/h', color: '#38bdf8', domain: [0, 'auto'] },
-            ].map(sensor => (
+            {SENSORS.map(sensor => (
               <button
                 key={sensor.id}
                 onClick={() => setSensorActivo(sensor)}
