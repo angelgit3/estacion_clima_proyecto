@@ -6,31 +6,32 @@ export default {
     extend: {
       colors: {
         surface: {
-          DEFAULT: '#141218',
-          dim: '#141218',
-          bright: '#3b383e',
+          DEFAULT: '#f8fafc',
+          dim: '#f1f5f9',
+          bright: '#ffffff',
           container: {
-            DEFAULT: '#211f24',
-            low: '#1d1b20',
-            high: '#2b292f',
-            highest: '#36343a',
-            lowest: '#0f0d13',
+            DEFAULT: '#ffffff',
+            low: '#f8fafc',
+            high: '#f1f5f9',
+            highest: '#e2e8f0',
+            lowest: '#ffffff',
           },
         },
         outline: {
-          DEFAULT: '#948e9c',
-          variant: '#494551',
+          DEFAULT: '#94a3b8',
+          variant: '#cbd5e1',
         },
-        neon: {
-          orange: '#fb923c',
-          cyan: '#22d3ee',
-          emerald: '#34d399',
-          purple: '#a855f7',
-          skyblue: '#38bdf8',
+        brand: {
+          primary: '#0ea5e9',
+          secondary: '#6366f1',
+          accent: '#f43f5e',
+          success: '#10b981',
+          warning: '#f59e0b',
+          info: '#06b6d4',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         'display-metrics': ['48px', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],

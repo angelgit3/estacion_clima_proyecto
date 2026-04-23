@@ -8,7 +8,11 @@
 
 @layer base {
   body {
-    @apply bg-[#0f172a] text-slate-300 font-sans antialiased m-0;
+    @apply bg-slate-50 text-slate-800 font-sans antialiased m-0;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(202,100%,95%,1) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(220,100%,95%,1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(180,100%,95%,1) 0, transparent 50%);
   }
 
   #root {
@@ -19,19 +23,16 @@
 @layer components {
   /* Glassmorphism panel — the bread and butter of every card */
   .glass-panel {
-    background-color: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
+    @apply bg-white/70 backdrop-blur-md;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    border-radius: 24px;
   }
 
   /* Accent borders for metric cards */
-  .metric-accent-orange  { border-top: 2px solid theme('colors.neon.orange'); }
-  .metric-accent-cyan    { border-top: 2px solid theme('colors.neon.cyan'); }
-  .metric-accent-emerald { border-top: 2px solid theme('colors.neon.emerald'); }
-  .metric-accent-purple  { border-top: 2px solid theme('colors.neon.purple'); }
-  .metric-accent-skyblue { border-top: 2px solid theme('colors.neon.skyblue'); }
+  .metric-accent-orange  { border-bottom: 4px solid theme('colors.brand.warning'); }
+  .metric-accent-cyan    { border-bottom: 4px solid theme('colors.brand.info'); }
+  .metric-accent-emerald { border-bottom: 4px solid theme('colors.brand.success'); }
+  .metric-accent-purple  { border-bottom: 4px solid theme('colors.brand.secondary'); }
+  .metric-accent-skyblue { border-bottom: 4px solid theme('colors.brand.primary'); }
 }

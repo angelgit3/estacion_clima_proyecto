@@ -1,23 +1,16 @@
 const RANGOS = ['1H', '24H', '7D', '30D'];
 
-/**
- * Selector de rango de tiempo para las gráficas históricas.
- *
- * @param {object} props
- * @param {string} props.activo — rango actualmente seleccionado
- * @param {(rango: string) => void} props.onChange
- */
 export default function TimeRangeSelector({ activo, onChange }) {
   return (
-    <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5">
+    <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60 shadow-inner">
       {RANGOS.map((r) => (
         <button
           key={r}
           onClick={() => onChange(r)}
-          className={`px-4 py-1.5 rounded-md text-label-bold transition-colors ${
+          className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all duration-300 ${
             r === activo
-              ? 'bg-slate-700 text-white shadow-sm'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-white text-slate-900 shadow-md'
+              : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           {r}
